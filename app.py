@@ -3,7 +3,6 @@ import qrcode
 import qrcode.image.svg
 import io
 import json
-from PIL import Image
 
 app = Flask(__name__)
 
@@ -28,14 +27,14 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Kodów QR (Druk & Etykiety)</title>
+    <title>Generator Kodów QR (URL & Tekst)</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 800px; margin: 30px auto; padding: 0 20px; background: #f8f9fa; color: #333; }
         h1, h2 { color: #1a1a1a; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 25px; }
         label { font-weight: 600; display: block; margin-top: 15px; margin-bottom: 5px; }
-        input, select, button { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        input:focus, select:focus { border-color: #0066cc; outline: none; }
+        input, select, textarea, button { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        input:focus, select:focus, textarea:focus { border-color: #0066cc; outline: none; }
         button { background: #0066cc; color: white; border: none; font-weight: bold; margin-top: 20px; cursor: pointer; transition: background 0.2s; }
         button:hover { background: #0052a3; }
         .qr-result { text-align: center; margin-top: 25px; padding-top: 25px; border-top: 2px dashed #eee; }
@@ -49,25 +48,67 @@ HTML_TEMPLATE = """
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
         th { background: #fafafa; font-size: 13px; text-transform: uppercase; color: #666; }
         code { background: #eef; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+        .field-group { margin-bottom: 15px; }
     </style>
+    <script>
+        function toggleInputFields() {
+            var qrType = document.getElementById("type").value;
+            var urlGroup = document.getElementById("url-group");
+            var textGroup = document.getElementById("text-group");
+            var aliasGroup = document.getElementById("alias-group");
+            
+            if (qrType === "text") {
+                urlGroup.style.display = "none";
+                textGroup.style.display = "block";
+                document.getElementById("url").required = false;
+                document.getElementById("text_content").required = true;
+            } else {
+                urlGroup.style.display = "block";
+                textGroup.style.display = "none";
+                document.getElementById("url").required = true;
+                document.getElementById("text_content").required = false;
+            }
+
+            if (qrType === "dynamic") {
+                aliasGroup.style.display = "block";
+            } else if (qrType === "static") {
+                aliasGroup.style.display = "block";
+            } else {
+                aliasGroup.style.display = "block";
+            }
+        }
+        window.onload = toggleInputFields;
+    </script>
 </head>
 <body>
     <div class="card">
         <h1>📦 Generator Kodów QR na Opakowania</h1>
-        <p style="color: #666;">Twórz bezpłatne statyczne i dynamiczne kody QR gotowe do druku (Korekcja błędów Level H).</p>
+        <p style="color: #666;">Twórz bezpłatne kody QR na opakowania (URL, instrukcje PDF, zwykły tekst / specyfikacje).</p>
         
         <form method="POST" action="/generate">
-            <label for="type">Typ kodu QR:</label>
-            <select name="type" id="type">
-                <option value="dynamic">Dynamiczny (Zalecany na pudełka - zmiana PDF bez re-druku)</option>
-                <option value="static">Statyczny (Stały bezpośredni adres URL)</option>
-            </select>
+            <div class="field-group">
+                <label for="type">Typ kodu QR:</label>
+                <select name="type" id="type" onchange="toggleInputFields()">
+                    <option value="dynamic">Dynamiczny URL (Zalecany na pudełka - zmiana PDF bez re-druku)</option>
+                    <option value="static">Statyczny URL (Stały link do strony/PDF)</option>
+                    <option value="text">Zwykły Tekst (Specyfikacja, numer partii, opis)</option>
+                </select>
+            </div>
 
-            <label for="url">Docelowy adres URL (np. link do pliku PDF):</label>
-            <input type="url" name="url" id="url" placeholder="https://awtools.pl/manuals/aw66025.pdf" required>
+            <div class="field-group" id="url-group">
+                <label for="url">Docelowy adres URL (np. link do pliku PDF):</label>
+                <input type="url" name="url" id="url" placeholder="https://awtools.pl/manuals/aw66025.pdf">
+            </div>
 
-            <label for="alias">Identyfikator / Kod artykułu (np. <code>aw66025</code>):</label>
-            <input type="text" name="alias" id="alias" placeholder="np. aw66025 lub zostaw puste">
+            <div class="field-group" id="text-group" style="display: none;">
+                <label for="text_content">Dowolny tekst do zakodowania w QR:</label>
+                <textarea name="text_content" id="text_content" rows="4" placeholder="Wpisz specyfikację, numer serii, instrukcję skróconą itp..."></textarea>
+            </div>
+
+            <div class="field-group" id="alias-group">
+                <label for="alias">Nazwa pliku / Kod artykułu (np. <code>aw66025</code>):</label>
+                <input type="text" name="alias" id="alias" placeholder="np. aw66025 lub zostaw puste">
+            </div>
 
             <button type="submit">Generuj Kod QR</button>
         </form>
@@ -78,13 +119,13 @@ HTML_TEMPLATE = """
             <div>{{ qr_svg | safe }}</div>
             
             <div style="margin-top: 20px;">
-                <a href="/download/svg?data={{ encoded_url | urlencode }}&filename={{ alias_name }}" class="btn-download btn-svg">Pobierz Wektorowy SVG (do druku)</a>
-                <a href="/download/png?data={{ encoded_url | urlencode }}&filename={{ alias_name }}" class="btn-download btn-png">Pobierz Podgląd PNG</a>
+                <a href="/download/svg?data={{ encoded_data | urlencode }}&filename={{ alias_name }}" class="btn-download btn-svg">Pobierz Wektorowy SVG (do druku)</a>
+                <a href="/download/png?data={{ encoded_data | urlencode }}&filename={{ alias_name }}" class="btn-download btn-png">Pobierz Podgląd PNG</a>
             </div>
 
             <p style="margin-top: 15px;">
-                <strong>Zakodowany adres w QR:</strong><br>
-                <code>{{ encoded_url }}</code>
+                <strong>Treść zakodowana w QR:</strong><br>
+                <code style="word-break: break-all;">{{ encoded_data }}</code>
             </p>
         </div>
         {% endif %}
@@ -129,19 +170,22 @@ def index():
 def generate():
     routes = load_routes()
     qr_type = request.form.get('type')
-    target_url = request.form.get('url').strip()
-    alias = request.form.get('alias').strip()
+    alias = request.form.get('alias', '').strip()
 
-    if qr_type == 'static':
-        encoded_url = target_url
+    if qr_type == 'text':
+        encoded_data = request.form.get('text_content', '').strip()
+        alias_name = alias if alias else "qr_text"
+    elif qr_type == 'static':
+        encoded_data = request.form.get('url', '').strip()
         alias_name = alias if alias else "qr_static"
-    else:
+    else:  # dynamic
+        target_url = request.form.get('url', '').strip()
         short_code = alias if alias else f"prod-{len(routes) + 1}"
         routes[short_code] = target_url
         save_routes(routes)
         
         host_url = request.host_url.rstrip('/')
-        encoded_url = f"{host_url}/qr/{short_code}"
+        encoded_data = f"{host_url}/qr/{short_code}"
         alias_name = short_code
 
     qr = qrcode.QRCode(
@@ -150,7 +194,7 @@ def generate():
         box_size=10,
         border=4
     )
-    qr.add_data(encoded_url)
+    qr.add_data(encoded_data)
     qr.make(fit=True)
     img = qr.make_image(image_factory=qrcode.image.svg.SvgPathImage)
     stream = io.BytesIO()
@@ -160,7 +204,7 @@ def generate():
     return render_template_string(
         HTML_TEMPLATE, 
         qr_svg=svg_code, 
-        encoded_url=encoded_url, 
+        encoded_data=encoded_data, 
         alias_name=alias_name,
         routes=routes
     )
