@@ -82,8 +82,8 @@ HTML_TEMPLATE = """
 </head>
 <body>
     <div class="card">
-        <h1>📦 Generator Kodów QR na Opakowania</h1>
-        <p style="color: #666;">Twórz bezpłatne kody QR na opakowania (URL, instrukcje PDF, zwykły tekst / specyfikacje).</p>
+        <h1>📦 GENERATOR KODÓW QR AW-NARZĘDZIA</h1>
+        <p style="color: #666;">Kody QR na opakowania (URL, instrukcje PDF, zwykły tekst / specyfikacje).</p>
         
         <form method="POST" action="/generate">
             <div class="field-group">
