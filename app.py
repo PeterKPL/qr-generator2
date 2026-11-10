@@ -27,16 +27,20 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Kodów QR (URL & Tekst)</title>
+    <title>Generator Kodów QR - AW-TOOLS</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 800px; margin: 30px auto; padding: 0 20px; background: #f8f9fa; color: #333; }
-        h1, h2 { color: #1a1a1a; }
+        .header-bar { display: flex; align-items: center; justify-content: space-between; background: white; padding: 15px 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .header-bar img { height: 50px; width: auto; object-fit: contain; }
+        .header-title { text-align: right; }
+        .header-title h1 { margin: 0; font-size: 20px; color: #1a1a1a; }
+        .header-title p { margin: 3px 0 0 0; font-size: 12px; color: #666; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 25px; }
         label { font-weight: 600; display: block; margin-top: 15px; margin-bottom: 5px; }
         input, select, textarea, button { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        input:focus, select:focus, textarea:focus { border-color: #0066cc; outline: none; }
-        button { background: #0066cc; color: white; border: none; font-weight: bold; margin-top: 20px; cursor: pointer; transition: background 0.2s; }
-        button:hover { background: #0052a3; }
+        input:focus, select:focus, textarea:focus { border-color: #e31e24; outline: none; }
+        button { background: #e31e24; color: white; border: none; font-weight: bold; margin-top: 20px; cursor: pointer; transition: background 0.2s; border-radius: 6px; }
+        button:hover { background: #c1171c; }
         .qr-result { text-align: center; margin-top: 25px; padding-top: 25px; border-top: 2px dashed #eee; }
         .qr-result svg { max-width: 220px; height: auto; border: 1px solid #ddd; padding: 10px; background: white; }
         .btn-download { display: inline-block; padding: 10px 18px; margin: 8px 4px; border-radius: 6px; font-weight: bold; text-decoration: none; color: white; font-size: 14px; }
@@ -55,7 +59,6 @@ HTML_TEMPLATE = """
             var qrType = document.getElementById("type").value;
             var urlGroup = document.getElementById("url-group");
             var textGroup = document.getElementById("text-group");
-            var aliasGroup = document.getElementById("alias-group");
             
             if (qrType === "text") {
                 urlGroup.style.display = "none";
@@ -68,22 +71,21 @@ HTML_TEMPLATE = """
                 document.getElementById("url").required = true;
                 document.getElementById("text_content").required = false;
             }
-
-            if (qrType === "dynamic") {
-                aliasGroup.style.display = "block";
-            } else if (qrType === "static") {
-                aliasGroup.style.display = "block";
-            } else {
-                aliasGroup.style.display = "block";
-            }
         }
         window.onload = toggleInputFields;
     </script>
 </head>
 <body>
+    <div class="header-bar">
+        <img src="/static/logo.jpg" alt="AW-NARZĘDZIA Logo" onerror="this.onerror=null; this.src='https://awtools.pl/wp-content/uploads/2021/04/logo-awtools.png';">
+        <div class="header-title">
+            <h1>Generator Kodów QR</h1>
+            <p>AW-TOOLS Compliance & Packaging</p>
+        </div>
+    </div>
+
     <div class="card">
-        <h1>📦 GENERATOR KODÓW QR AW-NARZĘDZIA</h1>
-        <p style="color: #666;">Kody QR na opakowania (URL, instrukcje PDF, zwykły tekst / specyfikacje).</p>
+        <p style="color: #666; margin-top: 0;">Twórz bezpłatne kody QR na opakowania (URL, instrukcje PDF, specyfikacje tekstowe).</p>
         
         <form method="POST" action="/generate">
             <div class="field-group">
